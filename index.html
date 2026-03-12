@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ŁAPTRANS OS PRO</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#09090b">
+<link rel="manifest" href='data:application/manifest+json,{"name":"ŁAPTRANS OS","short_name":"ŁapTrans","start_url":".","display":"standalone","background_color":"#09090b","theme_color":"#09090b","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/758/758488.png","sizes":"512x512","type":"image/png"}]}'>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap');
+  
+  :root {
+    color-scheme: dark;
+    --bg: #09090b; --card: #18181b; --border: #27272a; --text: #f8fafc; --muted: #a1a1aa;
+    --taxi: #eab308; --life: #14b8a6; --driver: #3b82f6; --fleet: #10b981; --cargo: #8b5cf6; 
+    --sped: #f59e0b; --quote: #d946ef; --fuel: #f59e0b; --plan: #a855f7;
+    --success: #22c55e; --danger: #ef4444; --warning: #eab308; --info: #0ea5e9;
+    
+    /* Premium Wallet Colors */
+    --cat-food: #22c55e; --cat-home: #0ea5e9; --cat-shop: #ef4444; --cat-car: #f59e0b; 
+    --cat-fun: #a855f7; --cat-cloth: #ec4899; --cat-health: #14b8a6; --cat-other: #64748b;
+  }
+  
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  .app-container { max-width: 500px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; position: relative; z-index: 1;}
+  
+  .wiz-bg { position: fixed; top: 0; left: 0; right: 0; height: 60vh; background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 70%); z-index: -1; pointer-events: none; }
+
+  .panel { background: linear-gradient(145deg, #18181b, #121214); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; margin: 15px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); position: relative; overflow: hidden;}
+  .p-title { font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;}
+  .form-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 18px; border-radius: 16px; margin-bottom: 15px; }
+  .fs-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 800; margin-bottom: 12px; color: var(--muted); display:flex; align-items:center; gap:8px;}
+
+  .btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; margin-top: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .btn:active { transform: translateY(2px) scale(0.98); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+  .btn-driver { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3); } 
+  .btn-home { background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; box-shadow: 0 6px 20px rgba(20, 184, 166, 0.3);} 
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);}
+  .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);}
+  .btn-quote { background: linear-gradient(135deg, #d946ef, #c026d3); color: #fff;}
+  
+  .inp-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .inp-group { flex: 1; display: flex; flex-direction: column; }
+  .inp-group label { font-size: 0.7rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; padding-left: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .inp-group input, .inp-group select { background: #000; border: 1px solid var(--border); color: #fff; padding: 16px; border-radius: 14px; font-size: 1.1rem; font-weight: 600; outline: none; width: 100%; box-sizing: border-box; transition: 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
+  .inp-group input:focus, .inp-group select:focus { border-color: var(--driver); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+  .big-inp { font-size: 2.2rem !important; padding: 20px !important; font-weight: 900 !important; text-align: center !important; letter-spacing:-1px;}
+
+  /* --- WIZARD PREMIUM --- */
+  .wiz-screen { display: none; padding: 20px; min-height: 95vh; flex-direction: column; justify-content: center; animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .wiz-screen.active { display: flex; }
+  @keyframes fadeIn { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+  .w-title { font-size: 2.5rem; font-weight: 900; text-align: center; margin-bottom: 5px; letter-spacing: -1.5px; }
+  .w-sub { color: var(--muted); text-align: center; margin-bottom: 30px; font-size: 1rem; font-weight: 600; text-transform:uppercase; letter-spacing:1px;}
+  .premium-input { background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1); color: #fff; font-size: 2rem; font-weight: 900; text-align: center; padding: 20px; border-radius: 20px; width: 100%; box-sizing: border-box; transition: all 0.3s; box-shadow: inset 0 5px 15px rgba(0,0,0,0.3); letter-spacing: -1px; margin-bottom: 20px;}
+  .premium-input:focus { border-color: var(--driver); background: rgba(59,130,246,0.05); box-shadow: 0 0 20px rgba(59,130,246,0.3); outline: none; }
+  .opt-card { background: linear-gradient(145deg, #1e1e22, #121214); border: 2px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; transition: all 0.3s; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+  .opt-card.selected { border-color: var(--driver); background: linear-gradient(145deg, #1e293b, #121214); box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+  .opt-icon { font-size: 2.2rem; margin-right: 18px; background: rgba(255,255,255,0.05); width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; border-radius: 18px; transition: 0.3s;}
+  .opt-card.selected .opt-icon { background: rgba(59,130,246,0.2); }
+  
+  header { padding: 15px 20px; background: rgba(9, 9, 11, 0.85); border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(16px); }
+  .logo { font-weight: 900; font-size: 1.2rem; cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(255,255,255,0.05); border-radius:14px; border:1px solid rgba(255,255,255,0.05);}
+  .badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 12px; font-weight: 800; font-size:0.85rem; }
+  .settings-btn { font-size: 1.3rem; cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 12px; display:flex; align-items:center; justify-content:center; transition:.2s;}
+  
+  .dash-hero { text-align: center; padding: 40px 0 25px; }
+  .dash-hero p { margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+  .dash-hero h1 { margin: 0; font-size: 4.5rem; font-weight: 900; letter-spacing: -2.5px; line-height: 1; text-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; padding: 0 15px;}
+  .box { background: linear-gradient(145deg, #18181b, #121214); border: 1px solid rgba(255,255,255,0.05); padding: 18px; border-radius: 18px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.3);}
+  .box span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px;}
+  .box strong { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px;}
+  
+  .log-item { background: #000; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;}
+  
+  .chip-box { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 5px; scrollbar-width: none;}
+  .chip-box::-webkit-scrollbar { display: none; }
+  .chip { padding: 14px 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: var(--muted); border-radius: 14px; font-size: 0.85rem; font-weight: 800; cursor: pointer; white-space: nowrap; flex: 1; text-align: center; transition: all 0.2s;}
+  .chip.active { background: var(--driver); color: #fff; border-color: var(--driver); }
+  
+  .mode-switch { display: flex; background: #000; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); padding: 6px; margin-bottom: 20px; }
+  .mode-switch .m-btn { flex: 1; text-align: center; padding: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; cursor: pointer; border-radius: 10px; color: var(--muted); transition: 0.3s; }
+  .mode-switch .m-btn.active { background: var(--driver); color: #fff; box-shadow:0 4px 10px rgba(59,130,246,0.3);}
+
+  .fin-row { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); font-size: 0.95rem; align-items: center;}
+  .fin-row:last-child { border-bottom: none; }
+  .fin-label { color: var(--muted); font-weight: 600;}
+  .fin-val { font-weight: 800; font-size: 1.15rem;}
+
+  .nav { position: fixed; bottom: 0; width: 100%; max-width: 500px; background: rgba(18, 18, 20, 0.95); border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; padding: 12px 0 24px 0; z-index: 1000; backdrop-filter: blur(20px); box-shadow: 0 -10px 30px rgba(0,0,0,0.6);}
+  .nav-item { color: var(--muted); text-align: center; font-size: 0.55rem; font-weight: 800; cursor: pointer; text-transform: uppercase; flex: 1; transition: 0.2s; letter-spacing:0.5px;}
+  .nav-item.active { color: var(--driver); transform: translateY(-3px);}
+  .nav-item i { font-size: 1.4rem; display: block; margin-bottom: 6px; font-style: normal; }
+  
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 20000; padding: 20px; display: flex; flex-direction: column; justify-content:center; align-items:center; }
+  .hidden { display: none !important; }
+  
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); } 70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+  .shake-anim { animation: shake 0.3s ease-in-out; }
+  .btn-live { animation: pulse 2s infinite; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: 2px solid #34d399; font-size:1.2rem; padding:25px;}
+  .highlight-input { border-color: var(--success) !important; background: rgba(34, 197, 94, 0.15) !important; transition: 0.5s; box-shadow: 0 0 15px rgba(34,197,94,0.4)!important;}
+  
+  .section-lbl { font-size: 0.75rem; color: var(--driver); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin: 30px 15px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
+  
+  .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+  .leaflet-container { background: #000; border-radius: 16px; border: 1px solid var(--border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);}
+
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .cat-item { background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 16px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; }
+  .cat-item.active { background: rgba(255,255,255,0.1); border-color: #fff; transform: scale(1.05); }
+  .cat-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+  .cat-lbl { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; line-height: 1.2; word-wrap: break-word;}
+  
+  .acc-card { background: linear-gradient(145deg, #18181b, #121214); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position:relative; overflow:hidden;}
+  .acc-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--life); }
+  
+  /* Budżety Paski */
+  .budget-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-top: 8px;}
+  .budget-bar-fill { height: 100%; transition: width 0.5s; border-radius: 5px;}
+</style>
+</head>
+<body>
+
+<div class="wiz-bg"></div>
+<div id="app" class="app-container"></div>
+
+<div id="m-switcher" class="modal-overlay hidden">
+    <div class="panel" style="width:100%; max-width:380px; border-color:var(--muted); text-align:center;">
+        <div style="font-size:3rem; margin-bottom:10px;">🎛️</div>
+        <h3 style="color:#fff; margin:0 0 20px 0; font-size:1.3rem;">Zarządzanie Profilami</h3>
+        <div id="switcher-btns" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <button class="btn" style="background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.1); margin-top:20px;" onclick="document.getElementById('m-switcher').classList.add('hidden')">Zamknij</button>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// 1. INICJALIZACJA BAZY DANYCH
+// ==========================================
+let defaultDb = {
+    init: false, mainProfile: null, role: null, tab: 'term', filter: 'today', userName: '',
+    drv: { 
+        plat: 'apps', carType: 'rent', emp: 'partner', liveRideStart: null,
+        cfg: { fix: 0, tax: 0.085, fuelPx: 0.5, bC: 0, cC: 0, cType: 'month', eC: 0, iC: 0, eType: 'flat', ePct: 0, cardF: 0.015, goal: 350, defCity: 'Szczecin' }, 
+        odo: 0, q: {s:9, w:39, t1:3.2, t2:4, t3:6.4, t4:8}, 
+        sh: {on: false, o: 0, tr: []}, h: [], exp: [], fuel: [], clients: [] 
+    },
+    home: { 
+        n: 'Dom', sal: 0, fix: 0, 
+        accs: [{id:'bank', n:'Konto Bankowe', c:'#3b82f6', i:'🏦', startBal:0}, {id:'cash', n:'Portfel', c:'#10b981', i:'💵', startBal:0}, {id:'card', n:'Karta Kredytowa', c:'#f59e0b', i:'💳', startBal:0}],
+        trans: [], planned: [], members: [], budgets: {}
+    }
+};
+
+let db;
+try {
+    db = JSON.parse(localStorage.getItem('laptrans_v101_db')) || defaultDb;
+    if (!db.home || !db.drv || !db.drv.cfg) { db = defaultDb; }
+    if (!db.home.accs) db.home.accs = defaultDb.home.accs;
+    if (!db.home.trans) db.home.trans = [];
+    if (!db.home.budgets) db.home.budgets = {};
+} catch(e) { db = defaultDb; }
+
+let wData = { p: 'apps', c: 'rent', e: 'partner', mainProfile: null }; 
+window.hTransType = 'exp'; 
+window.hSelCat = null;
+window.hSelAcc = 'bank';
+const APP = document.getElementById('app');
+
+window.save = function() { localStorage.setItem('laptrans_v101_db', JSON.stringify(db)); }
+window.safeVal = function(id, fallback = 0) { let el = document.getElementById(id); if(el && el.value) { let v = parseFloat(el.value); return isNaN(v) ? fallback : v; } return fallback; }
+window.hardReset = function() { if(confirm("⚠️ Trwałe usunięcie wszystkich danych! Jesteś pewny?")) { localStorage.clear(); location.reload(); } }
+
+let dTSrc = null; let dTPay = null; let dQM = 'taxi'; let dQN = false; let dQV=0; let dQK=0; let dQM_T=0;
+
+window.dSessionInit = function() { 
+    if(!db || !db.drv) return;
+    if(db.drv.plat === 'apps') {
+        if(!['Uber', 'Bolt', 'Prywatny'].includes(dTSrc)) dTSrc = 'Uber';
+        if(!['Aplikacja', 'Gotówka'].includes(dTPay)) dTPay = 'Aplikacja';
+    } else {
+        if(!['Centrala', 'Postój', 'Prywatny'].includes(dTSrc)) dTSrc = 'Centrala';
+        if(!['Gotówka', 'Karta'].includes(dTPay)) dTPay = 'Gotówka';
+    }
+}
+
+window.openSwitcher = function() {
+    let s = document.getElementById('m-switcher');
+    let sBtns = document.getElementById('switcher-btns');
+    let html = '';
+    if (db.mainProfile === 'driver') {
+        html += `<button class="btn btn-driver" style="margin:0;" onclick="window.switchApp('drv')">🚕 Panel Taxi</button>`;
+        html += `<button class="btn btn-home" style="margin:0;" onclick="window.switchApp('home')">🏠 Budżet Domowy</button>`;
+    } else {
+        html += `<button class="btn btn-home" style="margin:0;" onclick="window.switchApp('home')">🏠 Budżet Domowy</button>`;
+        html += `<button class="btn btn-driver" style="margin:0;" onclick="window.switchApp('drv')">🚕 Panel Taxi</button>`;
+    }
+    sBtns.innerHTML = html; 
+    s.classList.remove('hidden');
+}
+
+window.switchApp = function(newRole) { 
+    db.role = newRole; db.tab = (newRole==='drv') ? 'term' : 'dash'; 
+    window.save(); document.getElementById('m-switcher').classList.add('hidden'); window.render(); 
+}
+
+// Globalny Render
+window.render = function() {
+    if(!db || !db.init) return window.rWiz();
+    window.dSessionInit();
+    if(db.role === 'drv') return window.rDrv();
+    if(db.role === 'home') return window.rHome(); 
+    return window.rWiz();
+}
+    // ==========================================
+// 2. KREATOR STARTOWY (PREMIUM WIZARD)
+// ==========================================
+window.rWiz = function() {
+    let html = `
+        <div id="w-main" class="wiz-screen active" style="align-items:center;">
+            <div style="width: 85px; height: 85px; background: linear-gradient(135deg, var(--driver), var(--life)); border-radius: 25px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; box-shadow: 0 15px 35px rgba(59,130,246,0.4); transform: rotate(-10deg);">🚀</div>
+            <h1 style="color:#fff; font-size:3.5rem; margin:0; font-weight:900; letter-spacing:-2.5px; text-shadow: 0 10px 30px rgba(0,0,0,0.5);">ŁAPTRANS</h1>
+            <p style="color:var(--muted); font-size:1.1rem; font-weight:600; margin-top:5px; letter-spacing: 0.5px; margin-bottom: 40px;">Twój Asystent Finansowy</p>
+            
+            <div style="width: 100%; max-width: 400px;">
+                <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 10px; text-align:center;">Przedstaw się</div>
+                <input type="text" id="w-name" placeholder="Twoje Imię" class="premium-input" value="${db.userName||''}">
+                
+                <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin: 30px 0 10px; text-align:center;">Wybierz główny moduł</div>
+                
+                <div class="opt-card" style="border-color:rgba(59,130,246,0.3);" onclick="window.wMainProfile('driver')">
+                    <div class="opt-icon" style="background:rgba(59,130,246,0.15); color:var(--driver);">🚕</div>
+                    <div class="opt-text"><h3 style="color:var(--driver)">Kierowca Taxi</h3><p>Utargi, nawigacja GPS, garaż, P&L.</p></div>
+                </div>
+                
+                <div class="opt-card" style="border-color:rgba(20,184,166,0.3);" onclick="window.wMainProfile('home')">
+                    <div class="opt-icon" style="background:rgba(20,184,166,0.15); color:var(--life);">🏠</div>
+                    <div class="opt-text"><h3 style="color:var(--life)">Budżet Domowy</h3><p>Wydatki, portfele, limity, kalendarz.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="w-home" class="wiz-screen">
+            <div class="w-title" style="color:var(--life)">Budżet Rodzinny</div><div class="w-sub">Gotowy do akcji</div>
+            <button class="btn btn-home" style="margin-top:30px; font-size:1.1rem; padding:20px;" onclick="window.hFin()">ZAKOŃCZ I URUCHOM</button>
+            <button class="btn btn-danger" style="background:transparent; box-shadow:none; margin-top:10px;" onclick="window.wS('w-main')">Wróć</button>
+        </div>
+        
+        <div id="w-d1" class="wiz-screen">
+            <div class="w-title">System Pracy</div><div class="w-sub">Krok 1 z 3</div>
+            <div class="opt-card selected" onclick="window.dW('p','apps',this)"><div class="opt-icon">📱</div><div class="opt-text"><h3>Aplikacje</h3><p>Uber, Bolt itp.</p></div></div>
+            <div class="opt-card" onclick="window.dW('p','corp',this)"><div class="opt-icon">📻</div><div class="opt-text"><h3>Korporacja</h3><p>Centrala i postój.</p></div></div>
+            <div id="wd-b" class="wiz-inputs" style="display:none; margin-top:5px; padding:0 5px;"><div class="inp-group"><label>Opłata za bazę/korporację (zł/mc)</label><input type="number" id="wd-b-v" placeholder="np. 400"></div></div>
+            <button class="btn btn-driver" style="margin-top:20px;" onclick="window.wS('w-d2')">Dalej</button>
+        </div>
+        
+        <div id="w-d2" class="wiz-screen">
+            <div class="w-title">Twoje Auto</div><div class="w-sub">Krok 2 z 3</div>
+            <div class="opt-card selected" onclick="window.dW('c','rent',this)"><div class="opt-icon">🤝</div><div class="opt-text"><h3>Wynajem od Floty</h3></div></div>
+            <div class="opt-card" onclick="window.dW('c','lease',this)"><div class="opt-icon">📝</div><div class="opt-text"><h3>Leasing / Kredyt</h3><p>Spłacam ratę miesięcznie.</p></div></div>
+            <div class="opt-card" onclick="window.dW('c','own',this)"><div class="opt-icon">🚗</div><div class="opt-text"><h3>Własne</h3><p>Spłacone.</p></div></div>
+            <div id="wd-c" class="wiz-inputs" style="display:block; margin-top:5px; padding:0 5px;"><div class="inp-row"><div class="inp-group"><label>Koszt za auto / Rata (zł)</label><input type="number" id="wd-c-v" placeholder="np. 600"></div><div class="inp-group"><label>Okres rozliczenia</label><select id="wd-c-type"><option value="week">Tygodniowo</option><option value="month" selected>Miesięcznie</option></select></div></div></div>
+            <button class="btn btn-driver" style="margin-top:20px;" onclick="window.wS('w-d3')">Dalej</button>
+            <button class="btn btn-danger" style="background:transparent; box-shadow:none; margin-top:10px;" onclick="window.wS('w-d1')">Wróć</button>
+        </div>
+        
+        <div id="w-d3" class="wiz-screen">
+            <div class="w-title">Koszty Stałe</div><div class="w-sub">Krok 3 z 3</div>
+            <div class="opt-card selected" onclick="window.dW('e','partner',this)"><div class="opt-icon">🤝</div><div class="opt-text"><h3>Podpięty pod Partnera</h3></div></div>
+            <div class="opt-card" onclick="window.dW('e','jdg',this)"><div class="opt-icon">💼</div><div class="opt-text"><h3>Własna Działalność (JDG)</h3></div></div>
+            <div id="wd-e-p" class="wiz-inputs" style="display:block; margin-top:5px; padding:0 5px;"><div class="inp-group" style="margin-bottom:15px;"><label>Rodzaj umowy z Partnerem</label><select id="wd-p-type" onchange="window.dTogglePType('wd')"><option value="flat">Stała kwota (np. 200 zł/mc)</option><option value="pct">Procent od utargu (np. 50/50)</option></select></div><div class="inp-group" id="wd-p-flat-box"><label>Koszt stały (zł/mc)</label><input type="number" id="wd-p-v" placeholder="np. 200"></div><div class="inp-group" id="wd-p-pct-box" style="display:none;"><label>Prowizja Partnera (%) z utargu</label><input type="number" id="wd-p-pct" placeholder="np. 50" style="color:var(--driver); font-weight:bold;"></div></div>
+            <div id="wd-e-j" class="wiz-inputs" style="display:none; margin-top:5px; padding:0 5px;"><div class="inp-group" style="margin-bottom:15px;"><label>Wysokość ZUS (zł/mc)</label><select id="wd-j-z"><option value="400">Ulga na Start (~400 zł/mc)</option><option value="650">Mały ZUS (~650 zł/mc)</option><option value="1600" selected>Pełny ZUS (~1600 zł/mc)</option></select></div></div>
+            <div class="wiz-inputs" style="display:block; margin-top:15px; padding:0 5px;"><div class="inp-group" style="margin-bottom:15px;"><label style="color:var(--info);">Podatek Dochodowy / VAT (%)</label><input type="number" id="wd-tx-v" placeholder="np. 8.5 dla ryczałtu" value="8.5" step="0.1" style="border-color:var(--info);"></div><div class="inp-group"><label style="color:var(--muted);">Inne Koszty Stałe (Księgowy itp.) zł/mc</label><input type="number" id="wd-i-v" placeholder="np. 350"></div></div>
+            <button class="btn btn-success" style="margin-top:30px; font-size:1.1rem; padding:20px;" onclick="window.dFin()">ZAKOŃCZ I URUCHOM TAXI</button>
+            <button class="btn btn-danger" style="background:transparent; box-shadow:none; margin-top:10px;" onclick="window.wS('w-d2')">Wróć</button>
+        </div>
+    `;
+    APP.innerHTML = html;
+}
+
+window.wS = function(id) { document.querySelectorAll('.wiz-screen').forEach(e=>e.classList.remove('active')); let t = document.getElementById(id); if(t) t.classList.add('active'); window.scrollTo(0,0); }
+window.wMainProfile = function(prof) { wData.mainProfile = prof; if(prof==='driver') window.wS('w-d1'); else window.wS('w-home'); }
+window.dW = function(cat, val, el) { wData[cat] = val; el.parentElement.querySelectorAll('.opt-card').forEach(c=>{ c.style.borderColor='rgba(255,255,255,0.05)'; c.classList.remove('selected'); }); el.style.borderColor='var(--driver)'; el.classList.add('selected'); if(cat==='p') { let elB = document.getElementById('wd-b'); if(elB) elB.style.display = (val === 'corp') ? 'block' : 'none'; } if(cat==='c') { let elC = document.getElementById('wd-c'); if(elC) elC.style.display = (val === 'own') ? 'none' : 'block'; } if(cat==='e') { let ep = document.getElementById('wd-e-p'); let ej = document.getElementById('wd-e-j'); if(ep) ep.style.display = (val === 'partner') ? 'block' : 'none'; if(ej) ej.style.display = (val === 'jdg') ? 'block' : 'none'; } }
+window.dTogglePType = function(prefix) { let elT = document.getElementById(`${prefix}-p-type`); let val = elT ? elT.value : 'flat'; let flatBox = document.getElementById(`${prefix}-p-flat-box`); let pctBox = document.getElementById(`${prefix}-p-pct-box`); if(flatBox) flatBox.style.display = (val === 'flat') ? 'block' : 'none'; if(pctBox) pctBox.style.display = (val === 'pct') ? 'block' : 'none'; }
+
+window.dFin = function() { 
+    db.mainProfile = wData.mainProfile || 'driver';
+    let nameEl = document.getElementById('w-name'); db.userName = nameEl ? (nameEl.value || 'Kierowca') : 'Kierowca';
+    db.drv.plat = wData.p; db.drv.carType = wData.c; db.drv.emp = wData.e; 
+    let b = wData.p === 'corp' ? window.safeVal('wd-b-v') : 0; let c = wData.c === 'own' ? 0 : window.safeVal('wd-c-v'); let cTypeEl = document.getElementById('wd-c-type'); let cType = wData.c === 'own' ? 'month' : (cTypeEl ? cTypeEl.value : 'month');
+    let i = window.safeVal('wd-i-v'); let e = 0, eTy = 'flat', ePct = 0; 
+    if(wData.e === 'partner') { let pTypeEl = document.getElementById('wd-p-type'); eTy = pTypeEl ? pTypeEl.value : 'flat'; if(eTy === 'flat') { e = window.safeVal('wd-p-v'); } else { ePct = window.safeVal('wd-p-pct') / 100; } } else { e = window.safeVal('wd-j-z'); } 
+    db.drv.cfg.bC = b; db.drv.cfg.cC = c; db.drv.cfg.cType = cType; db.drv.cfg.eC = e; db.drv.cfg.iC = i; db.drv.cfg.eType = eTy; db.drv.cfg.ePct = ePct; 
+    let dailyCar = (cType === 'week') ? (c / 7) : (c / 30); let dailyOther = (b + e + i) / 30; db.drv.cfg.fix = dailyCar + dailyOther;
+    db.drv.cfg.tax = window.safeVal('wd-tx-v', 8.5) / 100; db.drv.cfg.cardF = 0.015; db.drv.cfg.goal = 350;
+    db.role = 'drv'; db.tab = 'term'; db.init = true; window.save(); window.dSessionInit(); window.render(); 
+}
+
+window.hFin = function() { db.mainProfile = 'home'; let nameEl = document.getElementById('w-name'); db.userName = nameEl ? (nameEl.value || 'Domownik') : 'Domownik'; db.home.members = [db.userName]; db.role = 'home'; db.tab = 'dash'; db.init = true; window.save(); window.render(); }
+
+// ==========================================
+// 3. ZAAWANSOWANY BUDŻET DOMOWY (WALLET CLONE)
+// ==========================================
+const C_EXP = {
+    'Zakupy Spożywcze': {c: '#22c55e', i: '🛒'}, 'Dom i Rachunki': {c: '#0ea5e9', i: '🏠'}, 'Auto i Transport': {c: '#f59e0b', i: '🚗'},
+    'Rozrywka': {c: '#a855f7', i: '🎉'}, 'Jedzenie na mieście': {c: '#ef4444', i: '🍔'}, 'Ubrania': {c: '#ec4899', i: '👗'}, 'Zdrowie': {c: '#14b8a6', i: '💊'}, 'Inne Wydatki': {c: '#64748b', i: '📦'}
+};
+const C_INC = {
+    'Wypłata z Etatu': {c: '#22c55e', i: '💼'}, 'Utarg z Taxi': {c: '#3b82f6', i: '🚕'}, 'Premia / Prezent': {c: '#10b981', i: '🎁'}, 'Inne Wpływy': {c: '#14b8a6', i: '📈'}
+};
+
+window.hGetBal = function() {
+    let b = {}; db.home.accs.forEach(a => b[a.id] = a.startBal || 0);
+    db.home.trans.forEach(x => {
+        if(x.type === 'inc' && b[x.acc] !== undefined) b[x.acc] += x.v;
+        if(x.type === 'exp' && b[x.acc] !== undefined) b[x.acc] -= x.v;
+        if(x.type === 'transfer') { if(b[x.fromAcc] !== undefined) b[x.fromAcc] -= x.v; if(b[x.toAcc] !== undefined) b[x.toAcc] += x.v; }
+    });
+    return b;
+}
+
+window.rHome = function() { 
+    let h = db.home; let t = db.tab; 
+    let nav = `<div class="nav"><div class="nav-item ${t==='dash'?'act-home':''}" onclick="db.tab='dash';window.render()"><i>🏠</i>Przegląd</div><div class="nav-item ${t==='acc'?'act-home':''}" onclick="db.tab='acc';window.render()"><i>💳</i>Konta</div><div class="nav-item" style="transform:translateY(-15px);"><div style="background:var(--life); width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto; box-shadow:0 5px 15px rgba(20,184,166,0.4); color:#000; font-size:1.8rem;" onclick="db.tab='add';window.render()">+</div></div><div class="nav-item ${t==='stats'?'act-home':''}" onclick="db.tab='stats';window.render()"><i>📊</i>Wykresy</div><div class="nav-item ${t==='cal'?'act-home':''}" onclick="db.tab='cal';window.render()"><i>📅</i>Historia</div></div>`; 
+    let hdr = `<header><div class="logo" onclick="window.openSwitcher()">ŁAPTRANS <span style="color:var(--life)">⏷</span></div><div class="header-actions"><div class="settings-btn" style="background:transparent; border:none; padding:0; display:flex; flex-direction:column; align-items:center;" onclick="db.tab='set';window.render()"><span style="font-size:1.4rem; line-height:1;">⚙️</span><span style="font-size:0.5rem; font-weight:900; color:var(--muted); text-transform:uppercase;">Ustawienia</span></div></div></header>`; 
+    
+    let balances = window.hGetBal();
+    let globalBalance = Object.values(balances).reduce((a,b)=>a+b, 0); 
+    let now = new Date(); let currExp=0; let currInc=0;
+    
+    h.trans.forEach(x => { 
+        let d = new Date(x.rD); 
+        if(d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()) {
+            if(x.type==='exp') currExp += x.v;
+            if(x.type==='inc') currInc += x.v;
+        }
+    });
+
+    if(t === 'dash') { 
+        APP.innerHTML = hdr + `
+        <div style="background: linear-gradient(180deg, rgba(20,184,166,0.15) 0%, var(--bg) 100%); padding: 30px 20px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius:30px; border-bottom-right-radius:30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <p style="margin:0 0 5px 0; font-size:0.8rem; color:var(--muted); text-transform:uppercase; font-weight:bold; letter-spacing:1px;">Suma posiadanych środków</p>
+            <h1 style="margin:0; font-size:3.8rem; font-weight:900; color:${globalBalance >= 0 ? '#fff' : 'var(--danger)'}; letter-spacing:-1.5px;">${globalBalance.toFixed(2)} zł</h1>
+            <div style="display:flex; justify-content:center; gap:20px; margin-top:20px;">
+                <div style="background:rgba(34,197,94,0.1); padding:8px 15px; border-radius:12px; border:1px solid rgba(34,197,94,0.3); color:var(--success); font-size:0.9rem; font-weight:bold;">Wpływy: +${currInc.toFixed(0)}</div>
+                <div style="background:rgba(239,68,68,0.1); padding:8px 15px; border-radius:12px; border:1px solid rgba(239,68,68,0.3); color:var(--danger); font-size:0.9rem; font-weight:bold;">Wydatki: -${currExp.toFixed(0)}</div>
+            </div>
+        </div>
+        
+        <div class="section-lbl" style="color:#fff; border-color:rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            Moje Konta <span style="color:var(--life); cursor:pointer;" onclick="db.tab='acc';window.render()">Zarządzaj ></span>
+        </div>
+        <div style="padding: 0 15px;">
+            ${h.accs.slice(0,3).map(a => `<div class="acc-card"><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:1.5rem;">${a.i}</div><div><span style="color:#fff; font-weight:bold; font-size:1rem;">${a.n}</span><br><small style="color:var(--muted); font-size:0.75rem;">Zwykłe</small></div></div><strong style="color:${balances[a.id]>=0?'var(--success)':'var(--danger)'}; font-size:1.15rem;">${balances[a.id].toFixed(2)} zł</strong></div>`).join('')}
+        </div>
+
+        <div class="section-lbl" style="color:#fff; border-color:rgba(255,255,255,0.1);">Ostatnie Transakcje</div>
+        <div style="padding: 0 15px;">
+            ${[...h.trans].sort((a,b)=>new Date(b.rD)-new Date(a.rD)).slice(0,8).map(x=>{ 
+                let isExp = x.type === 'exp'; 
+                let isTrans = x.type === 'transfer';
+                let cd = isExp ? (C_EXP[x.cat] || {c:'#ef4444',i:'💸'}) : (isTrans ? {c:'#8b5cf6',i:'🔄'} : (C_INC[x.cat] || {c:'#22c55e',i:'💵'}));
+                let accName = isTrans ? `Z ${h.accs.find(a=>a.id===x.fromAcc)?.n} na ${h.accs.find(a=>a.id===x.toAcc)?.n}` : (h.accs.find(a=>a.id===x.acc)?.n || 'Konto');
+                let catName = isTrans ? 'Przelew własny' : x.cat;
+                let sign = isExp ? '-' : (isTrans ? '' : '+');
+                let color = isExp ? 'var(--danger)' : (isTrans ? '#fff' : 'var(--success)');
+                
+                return `
+                <div class="log-item" style="border:none; border-bottom:1px solid rgba(255,255,255,0.05); border-radius:0; margin-bottom:0; background:transparent; padding:15px 5px;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="width:45px; height:45px; border-radius:50%; background:${cd.c}22; border:1px solid ${cd.c}55; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">${cd.i}</div>
+                        <div>
+                            <strong style="font-size:1rem; color:#fff;">${catName}</strong><br>
+                            <small style="color:var(--muted);">${accName} • ${x.dt}</small>
+                        </div>
+                    </div>
+                    <strong style="color:${color}; font-size:1.1rem;">${sign}${x.v.toFixed(2)} zł</strong>
+                </div>`;
+            }).join('') || '<div style="text-align:center;color:var(--muted);padding:20px 0; font-size:0.8rem;">Brak operacji na koncie.</div>'}
+        </div>
+        ` + nav; 
+    } 
+    
+    if(t === 'acc') {
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:10px;"><p>ZARZĄDZANIE KONTAMI</p><h1 style="color:#fff; font-size:3.5rem;">${globalBalance.toFixed(2)} zł</h1></div>
+        
+        <div style="padding: 0 15px;">
+            ${h.accs.map(a => `
+            <div class="panel" style="padding:20px; border-left:5px solid ${a.c}; background:linear-gradient(145deg, #18181b, #09090b); margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:15px; margin-bottom:15px;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="font-size:2.5rem;">${a.i}</div>
+                        <div><strong style="font-size:1.3rem;">${a.n}</strong><br><small style="color:var(--muted)">Bieżące saldo</small></div>
+                    </div>
+                    <strong style="color:${balances[a.id]>=0?'#fff':'var(--danger)'}; font-size:1.5rem;">${balances[a.id].toFixed(2)} zł</strong>
+                </div>
+                <div class="inp-row" style="margin-bottom:0;">
+                    <div class="inp-group"><label>Edytuj Nazwę</label><input type="text" id="edit_n_${a.id}" value="${a.n}" style="padding:12px; font-size:0.9rem;"></div>
+                    <div class="inp-group"><label>Saldo początkowe (zł)</label><input type="number" id="edit_b_${a.id}" value="${a.startBal||0}" style="padding:12px; font-size:0.9rem;"></div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn btn-home" style="padding:10px; font-size:0.8rem; border-radius:10px;" onclick="window.hSaveAcc('${a.id}')">ZAPISZ ZMIANY</button>
+                    <button class="btn btn-danger" style="padding:10px; font-size:0.8rem; border-radius:10px; box-shadow:none; flex:0.4;" onclick="window.hDelAcc('${a.id}')">USUŃ</button>
+                </div>
+            </div>`).join('')}
+            
+            <button class="btn" style="background:rgba(255,255,255,0.05); color:#fff; border:1px dashed rgba(255,255,255,0.2); margin-top:10px;" onclick="window.hAddNewAcc()">+ DODAJ NOWE KONTO</button>
+        </div>
+        ` + nav;
+    }
+
+    if(t === 'add') { 
+        let isExp = window.hTransType === 'exp'; 
+        let isTrans = window.hTransType === 'transfer';
+        let col = isExp ? 'var(--danger)' : (isTrans ? 'var(--info)' : 'var(--success)');
+        let topBg = isExp ? 'var(--bg-exp)' : (isTrans ? 'linear-gradient(180deg, #0ea5e9 0%, #09090b 100%)' : 'var(--bg-inc)');
+        let todayStr = new Date().toISOString().split('T')[0];
+        
+        let catSrc = isExp ? C_EXP : C_INC;
+        if(!isTrans && (!window.hSelCat || !catSrc[window.hSelCat])) window.hSelCat = Object.keys(catSrc)[0];
+
+        let accOptions = h.accs.map(a => `<option value="${a.id}" ${window.hSelAcc===a.id?'selected':''}>${a.n} (${balances[a.id].toFixed(0)} zł)</option>`).join('');
+        
+        let gridHtml = !isTrans ? `<div class="cat-grid">` + Object.keys(catSrc).map(k => `
+            <div class="cat-item ${window.hSelCat===k?'active':''}" onclick="window.hSelCat='${k}'; window.render();" style="${window.hSelCat===k?`background:${catSrc[k].c}22; border-color:${catSrc[k].c};`:''}">
+                <span class="cat-icon">${catSrc[k].i}</span><span class="cat-lbl">${k}</span>
+            </div>
+        `).join('') + `</div>` : '';
+
+        APP.innerHTML = hdr + `
+        <div style="background: ${topBg}; padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div class="mode-switch" style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
+                <div class="m-btn" style="${isExp?'background:var(--danger); color:#fff;':'color:var(--muted)'}" onclick="window.hTransType='exp';window.render()">WYDATEK</div>
+                <div class="m-btn" style="${!isExp&&!isTrans?'background:var(--success); color:#fff;':'color:var(--muted)'}" onclick="window.hTransType='inc';window.render()">WPŁYW</div>
+                <div class="m-btn" style="${isTrans?'background:var(--info); color:#fff;':'color:var(--muted)'}" onclick="window.hTransType='transfer';window.render()">TRANSFER</div>
+            </div>
+            <div style="text-align:center; padding: 10px 0;">
+                <label style="color:#fff; font-size:0.8rem; font-weight:bold; text-transform:uppercase; opacity:0.8;">Wprowadź Kwotę</label>
+                <div style="display:flex; justify-content:center; align-items:center; gap:5px; margin-top:5px;">
+                    <input type="number" id="h-v" style="background:transparent; border:none; border-bottom:2px solid #fff; color:#fff; font-size:4rem!important; font-weight:900; text-align:center; width:200px; padding:5px; outline:none;" placeholder="0">
+                    <span style="font-size:2rem; font-weight:900; color:#fff;">zł</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 20px 15px;">
+            ${isTrans ? `
+            <div class="inp-group" style="margin-bottom:15px;"><label>Z konta (Wypływ)</label><select id="h-acc-from" style="background:#18181b;">${accOptions}</select></div>
+            <div class="inp-group" style="margin-bottom:20px;"><label>Na konto (Wpływ)</label><select id="h-acc-to" style="background:#18181b;">${accOptions}</select></div>
+            ` : `
+            <div class="inp-group" style="margin-bottom:20px;"><label>Wybierz Konto</label><select id="h-acc" onchange="window.hSelAcc=this.value" style="background:#18181b;">${accOptions}</select></div>
+            <label style="font-size:0.75rem; color:var(--muted); font-weight:800; text-transform:uppercase; margin-bottom:10px; display:block; padding-left:5px;">Wybierz Kategorię</label>
+            ${gridHtml}
+            `}
+            
+            <div class="inp-group" style="margin-bottom:15px;"><label>Notatka (Opcjonalnie)</label><input type="text" id="h-d" placeholder="Wpisz krótki opis" style="background:#18181b;"></div>
+            <div class="inp-group" style="margin-bottom:20px;"><label>Data operacji</label><input type="date" id="h-date" value="${todayStr}" style="background:#18181b;"></div>
+            
+            <button class="btn" style="background:${col}; color:#fff; font-size:1.2rem; padding:20px;" onclick="window.hAction()">${isTrans?'WYKONAJ PRZELEW':'ZAPISZ TRANSAKCJĘ'}</button>
+        </div>` + nav; 
+    } 
+    
+    if(t === 'stats') { 
+        let now = new Date(); let cats = {}; let sum = 0; 
+        h.trans.forEach(x => { 
+            let d = new Date(x.rD); 
+            if(x.type === 'exp' && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()) { 
+                if(!cats[x.cat]) cats[x.cat] = 0; 
+                cats[x.cat] += x.v; sum += x.v; 
+            } 
+        }); 
+        
+        let sortedCats = Object.keys(cats).sort((a,b) => cats[b] - cats[a]);
+        let cLabels = sortedCats; let cData = sortedCats.map(k => cats[k]); 
+        let cColors = sortedCats.map(k => C_EXP[k] ? C_EXP[k].c : '#8b5cf6');
+
+        let catListHtml = sortedCats.map((lbl, idx) => {
+            let val = cData[idx]; let pct = sum > 0 ? ((val / sum) * 100).toFixed(0) : 0;
+            let color = cColors[idx]; let icon = C_EXP[lbl] ? C_EXP[lbl].i : '📦';
+            return `<div class="cat-list-item"><div style="display:flex; align-items:center;"><div style="width:30px; height:30px; border-radius:50%; background:${color}22; display:flex; align-items:center; justify-content:center; margin-right:12px; font-size:1rem; border:1px solid ${color}55;">${icon}</div><span class="cat-name">${lbl}</span></div><div style="display:flex; align-items:center;"><span class="cat-pct">${pct}%</span><span class="cat-val" style="color:${color};">-${val.toFixed(2)} zł</span></div></div>`;
+        }).join('');
+
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:10px;"><p>WYDATKI WEDŁUG KATEGORII</p><h1 style="color:var(--danger); font-size:3.5rem;">${sum.toFixed(2)} zł</h1></div>
+        <div class="panel" style="padding: 20px;">
+            <div style="height:250px; position:relative; margin-bottom:20px;"><canvas id="h-chart"></canvas>${sum === 0 ? '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:var(--muted); font-size:0.9rem;">Brak danych</div>' : ''}</div>
+            <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">${catListHtml || '<div style="text-align:center; color:var(--muted); font-size:0.85rem; padding:10px;">Brak wydatków w tym miesiącu.</div>'}</div>
+        </div>` + nav; 
+        
+        if(sum > 0) { setTimeout(() => { if(window.hCh) window.hCh.destroy(); let ctx = document.getElementById('h-chart').getContext('2d'); window.hCh = new Chart(ctx, { type: 'doughnut', data: { labels: cLabels, datasets: [{ data: cData, backgroundColor: cColors, borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%', layout: {padding: 10} } }); }, 100); }
+    } 
+
+    if(t === 'cal') {
+        let groups = {};
+        h.trans.sort((a,b) => new Date(b.rD) - new Date(a.rD)).forEach(x => { if(!groups[x.dt]) groups[x.dt] = []; groups[x.dt].push(x); });
+        
+        let calHtml = Object.keys(groups).map(date => {
+            let dayTrans = groups[date];
+            let dayExp = dayTrans.filter(x=>x.type==='exp').reduce((a,b)=>a+b.v, 0);
+            let dayInc = dayTrans.filter(x=>x.type==='inc').reduce((a,b)=>a+b.v, 0);
+            
+            let itemsHtml = dayTrans.map(x => {
+                let isExp = x.type === 'exp'; let isTrans = x.type === 'transfer';
+                let cd = isExp ? (C_EXP[x.cat] || {c:'#ef4444',i:'💸'}) : (isTrans ? {c:'#8b5cf6',i:'🔄'} : (C_INC[x.cat] || {c:'#22c55e',i:'💵'}));
+                let accName = isTrans ? `${h.accs.find(a=>a.id===x.fromAcc)?.n} -> ${h.accs.find(a=>a.id===x.toAcc)?.n}` : (h.accs.find(a=>a.id===x.acc)?.n || 'Konto');
+                let catName = isTrans ? 'Przelew' : x.cat;
+                return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);"><div style="display:flex; align-items:center; gap:12px;"><div style="width:35px; height:35px; border-radius:50%; background:${cd.c}22; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">${cd.i}</div><div><span style="color:#fff; font-size:0.95rem; font-weight:600;">${catName}</span><br><small style="color:var(--muted); font-size:0.7rem;">${accName} ${x.d ? '• '+x.d : ''}</small></div></div><strong style="color:${isExp?'var(--danger)':(isTrans?'#fff':'var(--success)')};">${isExp?'-':(isTrans?'':'+')}${x.v.toFixed(2)} zł</strong></div>`;
+            }).join('');
+            
+            return `<div class="date-group"><span>${date}</span> <span><span style="color:var(--success)">+${dayInc.toFixed(0)}</span> / <span style="color:var(--danger)">-${dayExp.toFixed(0)}</span></span></div><div class="panel" style="margin-top:5px; padding:5px 15px; border-radius:12px;">${itemsHtml}</div>`;
+        }).join('');
+
+        APP.innerHTML = hdr + `<div class="dash-hero" style="padding-bottom:5px;"><p>HISTORIA KALENDARZA</p></div><div style="padding:0 15px 30px;">${calHtml || '<div style="text-align:center; color:var(--muted); padding:30px;">Brak historii transakcji.</div>'}</div>` + nav;
+    }
+
+    if(t === 'set') { 
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:10px;"><p>USTAWIENIA BUDŻETU I CELE</p></div>
+        
+        <div class="section-lbl" style="color:var(--plan); border-color:var(--plan);">🎯 Limity i Cele miesięczne</div>
+        <div class="panel" style="border-color:var(--plan);">
+            <div class="inp-group" style="margin-bottom:12px;"><label>Wybierz Kategorię do limitu</label><select id="hb-cat">${Object.keys(C_EXP).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div>
+            <div class="inp-row"><div class="inp-group"><label>Miesięczny Limit (zł)</label><input type="number" id="hb-val" placeholder="np. 500"></div></div>
+            <button class="btn" style="background:var(--plan); color:#fff; padding:15px;" onclick="window.hSetBudget()">USTAW LIMIT KATEGORII</button>
+            <div style="margin-top:20px;">
+                ${Object.keys(h.budgets || {}).map(k => {
+                    let limit = h.budgets[k];
+                    let spent = 0; let now = new Date();
+                    h.trans.forEach(x => { if(x.type==='exp' && x.cat===k && new Date(x.rD).getMonth()===now.getMonth()) spent += x.v; });
+                    let pct = Math.min((spent / limit) * 100, 100);
+                    let color = pct > 90 ? 'var(--danger)' : (pct > 70 ? 'var(--warning)' : 'var(--success)');
+                    return `<div style="margin-bottom:15px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px;"><span>${k}</span><span style="color:${color}">Wydano: ${spent.toFixed(0)} / ${limit} zł</span></div><div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;"><div style="width:${pct}%; background:${color}; height:100%;"></div></div></div>`;
+                }).join('')}
+            </div>
+        </div>
+
+        <div class="section-lbl" style="color:var(--danger); border-color:var(--danger);">⚠️ Strefa Niebezpieczna</div>
+        <div class="panel" style="border-color:rgba(239,68,68,0.4)"><button class="btn btn-danger" style="background:rgba(239,68,68,0.15); color:var(--danger); border:none; box-shadow:none;" onclick="window.hardReset()">TWARDY RESET APLIKACJI</button></div>` + nav; 
+    } 
+} 
+
+// Zapisz konto
+window.hSaveAcc = function(id) {
+    let n = document.getElementById('edit_n_'+id).value;
+    let b = parseFloat(document.getElementById('edit_b_'+id).value) || 0;
+    let acc = db.home.accs.find(a => a.id === id);
+    if(acc) { acc.n = n; acc.startBal = b; save(); render(); }
+}
+// Dodaj nowe konto
+window.hAddNewAcc = function() {
+    let n = prompt("Podaj nazwę nowego konta (np. Skarbonka):");
+    if(n) { db.home.accs.push({id:'acc_'+Date.now(), n:n, c:'#8b5cf6', i:'🏦', startBal:0}); save(); render(); }
+}
+// Usun konto
+window.hDelAcc = function(id) {
+    if(db.home.accs.length <= 1) return alert("Musisz mieć przynajmniej jedno konto!");
+    if(confirm("Usunąć to konto?")) { db.home.accs = db.home.accs.filter(a => a.id !== id); save(); render(); }
+}
+// Ustaw limit (Budżet)
+window.hSetBudget = function() {
+    let cat = document.getElementById('hb-cat').value;
+    let val = parseFloat(document.getElementById('hb-val').value);
+    if(!db.home.budgets) db.home.budgets = {};
+    if(val > 0) { db.home.budgets[cat] = val; } else { delete db.home.budgets[cat]; }
+    save(); render();
+}
+
+window.hAction = function() { 
+    let el = document.getElementById('h-v');
+    if(!el || !el.value) {
+        if(el) { el.style.borderBottom = '2px solid red'; el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300); }
+        return alert("Musisz podać kwotę operacji!");
+    }
+    let v = parseFloat(el.value);
+    
+    let dEl = document.getElementById('h-d'); let d = dEl ? dEl.value : ''; let who = window.hMem || db.home.members[0]; 
+    let dVal = document.getElementById('h-date') ? document.getElementById('h-date').value : '';
+    let dObj = dVal ? new Date(dVal) : new Date(); if(dVal) dObj.setHours(12,0,0);
+    
+    if(window.hTransType === 'transfer') {
+        let fAcc = document.getElementById('h-acc-from').value;
+        let tAcc = document.getElementById('h-acc-to').value;
+        if(fAcc === tAcc) return alert("Wybierz różne konta do przelewu!");
+        db.home.trans.push({id:Date.now(), type:'transfer', fromAcc:fAcc, toAcc:tAcc, d, v, who, dt:dObj.toLocaleDateString('pl-PL'), rD:dObj.toISOString()}); 
+    } else {
+        let acc = document.getElementById('h-acc').value;
+        let c = window.hSelCat; 
+        db.home.trans.push({id:Date.now(), type:window.hTransType, cat:c, acc:acc, d, v, who, dt:dObj.toLocaleDateString('pl-PL'), rD:dObj.toISOString()}); 
+    }
+    
+    db.home.trans.sort((a,b) => new Date(b.rD) - new Date(a.rD));
+    save(); db.tab='dash'; render(); 
+} 
+
+// ==========================================
+// 4. KIEROWCA TAXI (ŻELAZNA LOGIKA I NOWE P&L)
+// ==========================================
+window.rDrv = function() {
+    let d=db.drv; let t=db.tab;
+    
+    let nav = `<div class="nav"><div class="nav-item ${t==='term'?'active':''}" onclick="db.tab='term';window.render()"><i>🚕</i>Panel</div><div class="nav-item ${t==='quote'?'active':''}" onclick="db.tab='quote';window.render()"><i>🧮</i>Wycena</div><div class="nav-item ${t==='garage'?'active':''}" onclick="db.tab='garage';window.render()"><i>⛽</i>Garaż</div><div class="nav-item ${t==='stats'?'active':''}" onclick="db.tab='stats';window.render()"><i>📊</i>Wyniki</div><div class="nav-item ${t==='set'?'active':''}" onclick="db.tab='set';window.render()"><i>⚙️</i>Opcje</div></div>`;
+    
+    let hdr = `<header><div class="logo" onclick="window.openSwitcher()">ŁAPTRANS <span style="color:var(--driver)">⏷</span></div><div class="header-actions"><div class="badge" style="color:var(--fuel); border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.1);">${d.odo} KM</div></div></header>`;
+
+    if(t === 'term') { 
+        let ch1 = d.plat === 'apps' 
+            ? `<div class="chip ${dTSrc==='Uber'?'active':''}" style="${dTSrc==='Uber'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Uber',this)">Uber</div><div class="chip ${dTSrc==='Bolt'?'active':''}" style="${dTSrc==='Bolt'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Bolt',this)">Bolt</div><div class="chip ${dTSrc==='Prywatny'?'active':''}" style="${dTSrc==='Prywatny'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Prywatny',this)">Prywatny</div>`
+            : `<div class="chip ${dTSrc==='Centrala'?'active':''}" style="${dTSrc==='Centrala'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Centrala',this)">Centrala</div><div class="chip ${dTSrc==='Postój'?'active':''}" style="${dTSrc==='Postój'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Postój',this)">Postój</div><div class="chip ${dTSrc==='Prywatny'?'active':''}" style="${dTSrc==='Prywatny'?'background:var(--driver);color:#fff;border-color:var(--driver)':'color:var(--muted)'}" onclick="window.dTC('s','Prywatny',this)">Prywatny</div>`;
+        
+        let ch2 = d.plat === 'apps'
+            ? `<div class="chip ${dTPay==='Aplikacja'?'active':''}" style="${dTPay==='Aplikacja'?'background:var(--info);color:#fff;border-color:var(--info)':'color:var(--muted)'}" onclick="window.dTC('p','Aplikacja',this)">Aplikacja</div><div class="chip ${dTPay==='Gotówka'?'active':''}" style="${dTPay==='Gotówka'?'background:var(--success);color:#000;border-color:var(--success)':'color:var(--muted)'}" onclick="window.dTC('p','Gotówka',this)">Gotówka</div>`
+            : `<div class="chip ${dTPay==='Gotówka'?'active':''}" style="${dTPay==='Gotówka'?'background:var(--success);color:#000;border-color:var(--success)':'color:var(--muted)'}" onclick="window.dTC('p','Gotówka',this)">Gotówka</div><div class="chip ${dTPay==='Karta'?'active':''}" style="${dTPay==='Karta'?'background:var(--info);color:#fff;border-color:var(--info)':'color:var(--muted)'}" onclick="window.dTC('p','Karta',this)">Karta</div>`;
+
+        let clientOpts = d.clients.map(c => `<option value="${c.id}">${c.n}</option>`).join('');
+
+        let g=0, cf=0; if(d.sh.on) { d.sh.tr.forEach(x=>{ g+=x.v; if(x.p==='Karta') cf += x.v * d.cfg.cardF; }); }
+        let pFee = d.cfg.eType === 'pct' ? g * d.cfg.ePct : 0; let n = g - (g * d.cfg.tax) - pFee - cf - d.cfg.fix; 
+        
+        let stoperHtml = '';
+        if(d.sh.on) {
+            if(d.liveRideStart) {
+                stoperHtml = `<div class="panel" style="border-color:var(--danger); text-align:center; background:rgba(239,68,68,0.05); padding:30px 20px;"><div style="font-size:3rem; margin-bottom:10px;">⏳</div><h3 style="color:var(--danger); margin:0 0 5px 0; text-transform:uppercase;">Kurs w toku!</h3><p style="color:var(--muted); font-size:0.85rem; margin-bottom:20px;">Stoper liczy czas. Możesz zablokować telefon.</p><button class="btn btn-live" onclick="window.stopLiveRide()">🔴 ZAKOŃCZ KURS</button></div>`;
+            } else {
+                stoperHtml = `<div class="panel" style="border-color:var(--success); text-align:center;"><button class="btn" style="background:var(--success); color:#000; font-size:1.2rem; padding:25px;" onclick="window.startLiveRide()">🟢 ROZPOCZNIJ KURS (STOPER)</button><p style="color:var(--muted); font-size:0.75rem; margin-top:15px;">Kliknij, gdy klient wsiądzie. System sam wyliczy minuty.</p></div>`;
+            }
+        }
+
+        let act = d.sh.on ? `
+        <div class="dash-hero" style="padding-bottom:5px;"><p>ZYSK NETTO ZMIANY</p><h1 style="font-size:4rem; color:${n>=0?'var(--success)':'var(--danger)'};">${n.toFixed(2)} zł</h1></div>
+        ${stoperHtml}
+        <div class="panel" style="border-color:rgba(59, 130, 246, 0.4);">
+            <div class="p-title" style="color:var(--driver);">➕ Zaksięguj nowy kurs</div>
+            <div class="form-section" style="padding:12px; margin-bottom:15px;"><div class="fs-title" style="margin-bottom:8px;">Źródło & Płatność</div><div class="chip-box" style="margin-bottom:10px; padding-bottom:0;">${ch1}</div><div class="chip-box" style="margin-bottom:0; padding-bottom:0;">${ch2}</div></div>
+            <div class="inp-group" style="margin-bottom:15px;"><label>Zwiąż z Klientem VIP (Opcjonalnie)</label><select id="dt-cid"><option value="">-- Zwykły kurs --</option>${clientOpts}</select></div>
+            <div class="form-section" style="padding:20px 15px; border-color:rgba(59,130,246,0.3); background:rgba(59,130,246,0.05);"><div class="fs-title" style="color:var(--driver); text-align:center; margin-bottom:15px;">Kwota (Brutto z taksometru / apki)</div><input type="number" id="dt-v" class="big-inp" placeholder="0.00" style="color:var(--driver); border:none; background:rgba(0,0,0,0.5); border-radius:16px;"></div>
+            <div class="inp-row"><div class="inp-group"><label>Czas (Min)</label><input type="number" id="dt-m" placeholder="np. 15"></div><div class="inp-group"><label>Dystans (KM)</label><input type="number" id="dt-k" placeholder="np. 8.5"></div></div>
+            <button class="btn btn-driver" style="margin-top:15px; font-size:1.1rem; padding:20px;" onclick="window.dAddT()">DODAJ KURS DO PORTFELA</button>
+        </div>
+        <div class="panel"><div class="p-title">Historia Zmiany</div>${d.sh.tr.map(x=>{ let icon = x.p==='Gotówka'?'💵':(x.p==='Karta'?'💳':'📱'); return `<div class="log-item" style="border-left-color:var(--driver); padding:15px;"><div style="display:flex; align-items:center; gap:15px;"><div style="font-size:1.5rem; background:rgba(255,255,255,0.05); padding:10px; border-radius:12px;">${icon}</div><div><strong style="font-size:1.2rem">${x.v.toFixed(2)} zł</strong><br><small style="color:var(--muted)">${x.s} • ${x.m||0} min • ${x.k||0}km</small></div></div><button class="btn-danger" style="padding:8px 12px; border:none; border-radius:8px; font-weight:bold; background:rgba(239,68,68,0.15); box-shadow:none;" onclick="window.dDelT(${x.id})">Cofnij</button></div>` }).join('')||'<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:0.9rem;">Brak kursów.</div>'}</div>
+        <div class="panel" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.02)"><div class="p-title" style="color:var(--danger)">Zakończenie Dnia Pracy</div><div class="inp-group" style="margin-bottom:15px;"><label style="color:var(--danger)">Licznik po zjeździe (KM)</label><input type="number" id="de-o" class="big-inp" style="color:var(--danger); border-color:rgba(239,68,68,0.4); background:#000;" placeholder="np. ${d.odo + 150}"></div><button class="btn btn-danger" onclick="window.dEndS()">ZAKOŃCZ ZMIANĘ</button></div>
+        ` : `
+        <div class="dash-hero" style="padding-top:40px;"><div style="width:80px;height:80px;background:linear-gradient(135deg,var(--success),#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2.5rem;box-shadow:0 10px 25px rgba(34,197,94,0.3);">🚗</div><h1 style="font-size:2.5rem;">Cześć, ${db.userName}!</h1><p style="margin-top:10px;">Aby rozpocząć, potwierdź stan licznika</p></div>
+        <div class="panel" style="border-color:var(--success); box-shadow:0 10px 30px rgba(34,197,94,0.1);">
+            <div class="inp-group"><input type="number" id="ds-o" class="big-inp" value="${d.odo > 0 ? d.odo : ''}" placeholder="Stan licznika (KM)"></div>
+            <button class="btn" style="background:linear-gradient(135deg, var(--success), #059669); color:#fff; font-size:1.2rem; padding:20px; margin-top:20px;" onclick="window.dStartS()">ROZPOCZNIJ PRACĘ</button>
+        </div>`;
+        APP.innerHTML = hdr + act + nav;
+    }
+
+    if(t === 'stats') {
+        let fM = db.filter || 'all'; let now = new Date(); let fs=[], fe=[];
+        d.h.forEach(s => { let sd=new Date(s.rD); if(fM==='all') fs.push(s); else if(fM==='today' && sd.toDateString()===now.toDateString()) fs.push(s); else if(fM==='month' && sd.getMonth()===now.getMonth()&&sd.getFullYear()===now.getFullYear()) fs.push(s); else if(fM==='week') { let diff=now.getDate()-now.getDay()+(now.getDay()===0?-6:1); let st=new Date(now.setDate(diff)); st.setHours(0,0,0,0); if(sd>=st) fs.push(s); } });
+        d.exp.forEach(e => { let ed=new Date(e.rD); if(fM==='all') fe.push(e); else if(fM==='today' && ed.toDateString()===now.toDateString()) fe.push(e); else if(fM==='month' && ed.getMonth()===now.getMonth()&&ed.getFullYear()===now.getFullYear()) fe.push(e); else if(fM==='week') { let diff=now.getDate()-now.getDay()+(now.getDay()===0?-6:1); let st=new Date(now.setDate(diff)); st.setHours(0,0,0,0); if(ed>=st) fe.push(e); } });
+        
+        let g=0, k=0, fc=0, tx=0, ex=0, pf=0, cf=0;
+        fs.forEach(x=>{g+=x.g; k+=x.k; fc+=x.fc; tx+=x.tx; pf+=(x.pF||0); cf+=(x.cF||0);}); 
+        fe.forEach(x=> { if(x.ty !== 'amort') ex+=x.v; });
+        
+        let uniqueDays = new Set(fs.map(s => new Date(s.rD).toLocaleDateString())).size;
+        if(uniqueDays === 0 && d.sh.on && fM === 'today') uniqueDays = 1; 
+        let fix = uniqueDays * d.cfg.fix; 
+
+        let n = g - fc - tx - fix - pf - cf - ex; 
+        let rKm = k>0?(n/k):0;
+        let rHr = 0; // Opcjonalnie, gdybyśmy logowali czas całej zmiany
+
+        APP.innerHTML = hdr + `<div class="mode-switch" style="margin:15px;"><div class="m-btn ${fM==='today'?'active':''}" onclick="db.filter='today';window.render()">Dziś</div><div class="m-btn ${fM==='week'?'active':''}" onclick="db.filter='week';window.render()">Tydzień</div><div class="m-btn ${fM==='month'?'active':''}" onclick="db.filter='month';window.render()">Miesiąc</div><div class="m-btn ${fM==='all'?'active':''}" onclick="db.filter='all';window.render()">Całość</div></div><div class="dash-hero" style="padding-top:0;"><p>TWOJE PRAWDZIWE NETTO</p><h1 style="color:${n>=0?'var(--success)':'var(--danger)'}; font-size:3.8rem;">${n.toFixed(2)} zł</h1></div><div class="grid-2"><div class="box"><span style="color:var(--info)">Zysk na 1 kilometr</span><strong style="color:#fff">${rKm.toFixed(2)} zł/km</strong></div><div class="box"><span style="color:var(--success)">Przepracowano</span><strong style="color:#fff">${uniqueDays} dni</strong></div></div>
+        
+        <div style="padding: 0 15px; margin-bottom: 20px;">
+            <button class="btn btn-home" onclick="window.dTransferToHomeUI()">💸 PRZELEJ ZYSKI DO BUDŻETU DOMOWEGO</button>
+        </div>
+
+        <div class="panel" style="padding:25px;"><div class="p-title">Wodospad Finansowy (P&L)</div><div class="fin-row"><span class="fin-label">Utarg Brutto z aplikacji</span><span class="fin-val" style="color:var(--success)">${g.toFixed(2)} zł</span></div><div class="fin-row"><span class="fin-label">Wydatki Zmienne (Garaż)</span><span class="fin-val" style="color:var(--danger)">-${ex.toFixed(2)} zł</span></div><div class="fin-row"><span class="fin-label">Paliwo z przejechanych tras</span><span class="fin-val" style="color:var(--fuel)">-${fc.toFixed(2)} zł</span></div>${cf > 0 ? `<div class="fin-row"><span class="fin-label" style="color:var(--info)">Prowizja Terminala (Karty)</span><span class="fin-val" style="color:var(--danger)">-${cf.toFixed(2)} zł</span></div>` : ''}${pf > 0 ? `<div class="fin-row"><span class="fin-label">Prowizja Partnera (Aplikacje)</span><span class="fin-val" style="color:var(--danger)">-${pf.toFixed(2)} zł</span></div>` : ''}<div class="fin-row"><span class="fin-label">Podatek Dochodowy/VAT (${(d.cfg.tax*100).toFixed(1)}%)</span><span class="fin-val" style="color:var(--danger)">-${tx.toFixed(2)} zł</span></div><div class="fin-row" style="align-items:flex-start;"><div style="display:flex; flex-direction:column; max-width:70%;"><span class="fin-label" style="color:#fff;">Koszty Stałe (Odpis za dni pracy)</span><small style="color:var(--muted); font-size:0.7rem; margin-top:4px; line-height:1.4;">Auto: ${d.cfg.cC} | Baza: ${d.cfg.bC} | Inne: ${d.cfg.eC + d.cfg.iC}</small></div><span class="fin-val" style="color:var(--danger); padding-top:2px;">-${fix.toFixed(2)} zł</span></div><div class="fin-row" style="background:#000; margin-top:15px; padding:20px; border-radius:14px; border:1px solid rgba(255,255,255,0.05);"><span class="fin-label" style="color:#fff; font-size:1.1rem;">CZYSTY ZYSK</span><span class="fin-val" style="font-size:1.5rem; color:${n>=0?'var(--success)':'var(--danger)'}">${n.toFixed(2)} zł</span></div></div><div class="panel"><div class="p-title">Dziennik Zmian</div>${fs.map(x=>`<div class="log-item" style="border-left-color:${x.n>=0?'var(--success)':'var(--danger)'}; flex-direction:column; align-items:flex-start; padding:15px;"><div style="display:flex; justify-content:space-between; width:100%; margin-bottom:5px;"><strong style="font-size:1.1rem;">${x.dt}</strong><strong style="color:${x.n>=0?'var(--success)':'var(--danger)'}; font-size:1.2rem;">${x.n.toFixed(2)} zł</strong></div><small style="color:var(--muted)">Utarg: ${x.g.toFixed(2)} zł | Przebieg: ${x.k}km</small></div>`).join('')||'<div style="text-align:center;color:var(--muted);font-size:0.85rem;padding:20px 0;">Brak danych w tym przedziale.</div>'}</div>` + nav;
+    }
+    if(t === 'quote') {
+        let q = d.q; let clientOpts = d.clients.map(c => `<option value="${c.id}" data-d="${c.d||0}">${c.n} (Rabat: ${c.d||0}%)</option>`).join('');
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:5px;"><p>INTELIGENTNA WYCENA (MAPY)</p></div>
+        <div class="panel" style="border-color:rgba(217, 70, 239, 0.4)">
+            <div class="form-section" style="padding:15px;">
+                <div class="inp-group" style="margin-bottom:10px;"><label style="color:var(--success)">🟢 Adres początkowy</label><input type="text" id="dq-start" placeholder="np. Dworzec Główny" style="border-color:var(--success);"></div>
+                <div class="inp-group"><label style="color:var(--danger)">🔴 Adres docelowy</label><input type="text" id="dq-end" placeholder="np. Powstańców Warszawy 1, Stargard" style="border-color:var(--danger);"></div>
+                <button class="btn btn-quote" style="margin-top:15px; padding:15px;" onclick="window.calculateRouteAuto()">🔍 WYZNACZ TRASĘ I CENĘ</button>
+            </div>
+            <div id="map-container" style="display:none; margin-top:20px;">
+                <div id="map" style="height: 250px; border-radius: 16px; border: 1px solid var(--border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);"></div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:12px;">
+                    <div style="text-align:center; flex:1;"><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Dystans</span><br><strong id="res-km" style="color:#fff; font-size:1.2rem;">0 km</strong></div>
+                    <div style="text-align:center; flex:1;"><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Czas jazdy</span><br><strong id="res-min" style="color:#fff; font-size:1.2rem;">0 min</strong></div>
+                </div>
+                <div class="chip-box" style="margin-top:15px;">
+                    <div class="chip ${!dQN?'active':''}" style="background:${!dQN?'rgba(217,70,239,0.1)':'var(--bg)'};color:${!dQN?'var(--quote)':'var(--muted)'}; border-color:${!dQN?'var(--quote)':'transparent'}" onclick="dQN=false; window.updateRoutePrice();">Dzień (T1/T3)</div>
+                    <div class="chip ${dQN?'active':''}" style="background:${dQN?'rgba(217,70,239,0.1)':'var(--bg)'};color:${dQN?'var(--quote)':'var(--muted)'}; border-color:${dQN?'var(--quote)':'transparent'}" onclick="dQN=true; window.updateRoutePrice();">Noc/Święto (T2/T4)</div>
+                </div>
+                <div id="zone-split" style="display:none; margin-top:15px; background:#000; padding:15px; border-radius:16px; border:1px solid rgba(255,255,255,0.05);">
+                    <label style="color:var(--info); font-size:0.75rem; text-transform:uppercase; font-weight:bold; display:block; text-align:center;">Przesuń do granicy miasta</label>
+                    <input type="range" id="zone-slider" min="0" max="100" value="100" step="0.1" style="width:100%; margin:15px 0;" oninput="window.updateZoneSplit()">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem;"><span style="color:var(--driver)">Miasto: <strong id="val-in">0.0</strong> km</span><span style="color:var(--warning)">Poza miastem: <strong id="val-out">0.0</strong> km</span></div>
+                </div>
+                <div style="background:#000; border-radius:16px; padding:20px; margin-top:20px; text-align:center; border:1px solid var(--quote); box-shadow:inset 0 5px 10px rgba(0,0,0,0.5);">
+                    <p style="margin:0 0 5px 0; color:var(--quote); font-size:0.75rem; font-weight:800;">PROPONOWANA CENA (BRUTTO)</p>
+                    <h1 id="dqt" style="margin:0; font-size:3.5rem; letter-spacing:-2px;">0.00 zł</h1>
+                </div>
+                <div class="inp-group" style="margin-top:15px;"><label>Klient VIP (Rabat)</label><select id="dq-c" onchange="window.updateRoutePrice()"><option value="">-- Zwykły kurs --</option>${clientOpts}</select></div>
+                <button class="btn btn-quote" style="margin-top:15px;" onclick="window.dQB()">ZAKSIĘGUJ KURS DO PANELU</button>
+            </div>
+        </div>
+        <div class="section-lbl" style="color:var(--quote); border-color:var(--quote);">Ustawienia Taryfikatora</div>
+        <div class="panel">
+            <div class="grid-2"><div class="inp-group"><label>Start</label><input type="number" id="dcs" value="${q.s}"></div><div class="inp-group"><label>1h Postoju</label><input type="number" id="dcw" value="${q.w}"></div></div>
+            <div class="grid-4" style="grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;"><div class="inp-group"><label>T1</label><input type="number" id="dct1" value="${q.t1}"></div><div class="inp-group"><label>T2</label><input type="number" id="dct2" value="${q.t2}"></div><div class="inp-group"><label>T3</label><input type="number" id="dct3" value="${q.t3}"></div><div class="inp-group"><label>T4</label><input type="number" id="dct4" value="${q.t4}"></div></div>
+            <button class="btn" style="background:#222; color:#fff;" onclick="window.dSaveQC()">ZAPISZ TARYFY</button>
+        </div>` + nav; 
+    }
+
+    if(t === 'garage') {
+        let fS = window.calcFuelioStats();
+        let todayStr = new Date().toISOString().split('T')[0];
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:5px;"><p>ŚREDNIE SPALANIE (Od ost. tankowania)</p><h1 style="color:var(--fuel); font-size:4rem;">${fS.l1.toFixed(1)} <span style="font-size:1.5rem; color:var(--muted)">L/100</span></h1></div>
+        <div class="grid-2" style="padding:0 15px; margin-bottom:20px;"><div class="box" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.05); align-items:center;"><span style="color:var(--fuel)">Koszt 100 KM</span><strong style="color:#fff">${fS.c1.toFixed(2)} zł</strong></div><div class="box" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.05); align-items:center;"><span style="color:var(--fuel)">Koszt 1 KM</span><strong style="color:#fff">${d.cfg.fuelPx.toFixed(2)} zł</strong></div></div>
+        
+        <div class="panel" style="border-color:var(--fuel); background: linear-gradient(180deg, #18181b 0%, #09090b 100%);">
+            <div class="p-title" style="color:var(--fuel)">⛽ Dziennik Tankowań</div>
+            <div class="inp-row"><div class="inp-group"><label>Licznik Główny (KM)</label><input type="number" id="df-o" placeholder="np. 155000"></div><div class="inp-group"><label>Wlane Litry</label><input type="number" id="df-l" step="0.1" placeholder="0.0"></div></div>
+            <div class="inp-row"><div class="inp-group"><label>Rachunek (zł)</label><input type="number" id="df-v" placeholder="0.00"></div><div class="inp-group"><label>Data</label><input type="date" id="df-date" value="${todayStr}"></div></div>
+            <div class="inp-group" style="margin-bottom:15px;"><label>Pod korek?</label><select id="df-f"><option value="1">Tak (Oblicz dokładne spalanie)</option><option value="0">Nie</option></select></div>
+            <button class="btn" style="background:var(--fuel); color:#000;" onclick="window.dAF()">ZAPISZ PARAGON ZE STACJI</button>
+        </div>
+        
+        <div class="panel" style="border-color:rgba(239,68,68,0.4)">
+            <div class="p-title" style="color:var(--danger)">🔧 Inne Wydatki Operacyjne</div>
+            <div class="inp-row"><div class="inp-group" style="flex:2"><label>Kategoria Wydatku</label><select id="de-c"><option value="✨ Myjnia / Kosmetyka">✨ Myjnia / Kosmetyka</option><option value="🛠️ Serwis / Części">🛠️ Serwis / Części</option><option value="💧 Płyny / Eksploatacja">💧 Płyny / Eksploatacja</option><option value="🛡️ Ubezpieczenie">🛡️ Ubezpieczenie</option><option value="🅿️ Parking / Autostrada">🅿️ Parking / Autostrada</option><option value="📦 Inne koszty">📦 Inne koszty</option></select></div><div class="inp-group"><label>Kwota (zł)</label><input type="number" id="de-v" placeholder="0.00"></div></div>
+            <div class="inp-group" style="margin-bottom:15px;"><label>Data Wydatku</label><input type="date" id="de-date" value="${todayStr}"></div>
+            <button class="btn btn-danger" style="background:var(--danger); color:#fff;" onclick="window.dAE()">ZAPISZ WYDATEK W BAZIE</button>
+        </div>
+        
+        <div class="section-lbl" style="color:#fff; border-color:rgba(255,255,255,0.1);">Historia Garażu</div>
+        <div style="padding: 0 15px; margin-bottom: 20px;">${window.renderGarageHistory()}</div>` + nav;
+    }
+
+    if(t === 'crm') {
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:10px;"><p>BAZA KLIENTÓW VIP</p><h1 style="font-size:3rem;">${d.clients.length} <span style="font-size:1.5rem; color:var(--muted)">Osob.</span></h1></div>
+        <div class="panel" style="border-color:var(--driver);">
+            <div class="p-title" style="color:var(--driver)">➕ Dodaj Klienta</div>
+            <div class="inp-row"><div class="inp-group"><label>Imię / Firma</label><input type="text" id="dc-n" placeholder="np. Hotel Qubus"></div></div>
+            <div class="inp-row"><div class="inp-group"><label>Telefon</label><input type="text" id="dc-p" placeholder="np. 500 000 000"></div><div class="inp-group"><label>Zniżka (%)</label><input type="number" id="dc-d" placeholder="np. 10"></div></div>
+            <button class="btn btn-driver" style="margin-top:10px;" onclick="window.dAddCrm()">ZAPISZ KLIENTA</button>
+        </div>
+        <div class="panel"><div class="p-title">Katalog Klientów</div>${d.clients.map(c => { return `<div class="log-item" style="border-left-color:var(--driver); flex-direction:column; align-items:flex-start; padding:18px; background:linear-gradient(145deg, #18181b, #121214);"><div style="display:flex; justify-content:space-between; width:100%;"><strong style="font-size:1.2rem; color:#fff">${c.n}</strong><span style="color:var(--muted); font-size:0.8rem;">${c.ph||'Brak tel'}</span></div><div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);"><div><span style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; font-weight:800;">Stałyy Rabat:</span><br><strong style="color:var(--info); font-size:1.1rem;">${c.d}%</strong></div><button class="btn-danger" style="padding:10px 14px; font-size:0.75rem; border:none; border-radius:10px; background:rgba(239,68,68,0.1); color:var(--danger); box-shadow:none;" onclick="window.dCrmDel(${c.id})">USUŃ</button></div></div>` }).join('') || '<div style="text-align:center;color:var(--muted);font-size:0.85rem;padding:20px;">Brak klientów.</div>'}</div>` + nav;
+    }
+
+    if(t === 'set') {
+        APP.innerHTML = hdr + `
+        <div class="dash-hero" style="padding-bottom:0; padding-top:10px;"><p>KONTROLA TWOJEJ FIRMY</p></div>
+        <div class="section-lbl" style="color:var(--success); border-color:var(--success);">👤 Personalizacja i Miasto</div>
+        <div class="panel">
+            <div class="inp-row"><div class="inp-group"><label>Twoje Imię</label><input type="text" id="us-name" value="${db.userName}"></div><div class="inp-group"><label>Cel Dzienny (zł)</label><input type="number" id="us-goal" value="${d.cfg.goal}"></div></div>
+            <div class="inp-group" style="margin-top:10px;"><label>Domyślne Miasto (Dla nawigacji)</label><input type="text" id="us-city" value="${d.cfg.defCity || 'Szczecin'}" style="border-color:var(--success);"></div>
+        </div>
+        
+        <div class="section-lbl" style="color:var(--driver); border-color:var(--driver);">🚗 Koszty Auta i Bazy</div>
+        <div class="panel">
+            <div class="inp-row"><div class="inp-group"><label>Rata / Wynajem (zł)</label><input type="number" id="us-cc" value="${d.cfg.cC}"></div><div class="inp-group"><label>Okres Rozliczenia</label><select id="us-ctype"><option value="week" ${d.cfg.cType==='week'?'selected':''}>Tygodniowo</option><option value="month" ${d.cfg.cType==='month'?'selected':''}>Miesięcznie</option></select></div></div>
+            <div class="inp-row"><div class="inp-group"><label>Baza / Aplikacje (zł/mc)</label><input type="number" id="us-bc" value="${d.cfg.bC}"></div><div class="inp-group"><label>Inne Stałe (zł/mc)</label><input type="number" id="us-ic" value="${d.cfg.iC || 0}"></div></div>
+        </div>
+        
+        <div class="section-lbl" style="color:var(--info); border-color:var(--info);">⚖️ Podatki i Prowizje</div>
+        <div class="panel">
+            <div class="inp-group" style="margin-bottom:15px;"><label>Rodzaj Rozliczenia (ZUS / Partner)</label><select id="us-etype" onchange="window.dTogglePType('us')"><option value="flat" ${d.cfg.eType==='flat'?'selected':''}>Stała kwota (np. ZUS)</option><option value="pct" ${d.cfg.eType==='pct'?'selected':''}>Procent (np. dla Partnera)</option></select></div>
+            <div id="us-p-flat-box" style="display:${d.cfg.eType==='flat'?'block':'none'}; margin-bottom:15px;"><div class="inp-group"><label>Kwota stała (zł/mc)</label><input type="number" id="us-ec" value="${d.cfg.eC}"></div></div>
+            <div id="us-p-pct-box" style="display:${d.cfg.eType==='pct'?'block':'none'}; margin-bottom:15px;"><div class="inp-group"><label>Prowizja Partnera (%)</label><input type="number" id="us-epct" value="${(d.cfg.ePct*100).toFixed(0)}" style="color:var(--driver); border-color:var(--driver);"></div></div>
+            <div class="inp-row"><div class="inp-group"><label>Podatek / VAT (%)</label><input type="number" id="us-tx" value="${(d.cfg.tax*100).toFixed(1)}" step="0.1"></div><div class="inp-group"><label>Prow. Terminala (%)</label><input type="number" id="us-cf" value="${(d.cfg.cardF*100).toFixed(1)}" step="0.1"></div></div>
+            <div style="background:#000; padding:15px; border-radius:12px; margin:15px 0; text-align:center; border:1px solid rgba(255,255,255,0.05);"><small style="color:var(--muted)">Wyliczona Dniówka Stała (Odpis):</small><br><strong style="color:var(--danger); font-size:1.5rem;">${d.cfg.fix.toFixed(2)} zł / dzień</strong></div>
+        </div>
+        
+        <div style="padding: 0 15px;"><button class="btn btn-driver" style="margin-bottom:30px;" onclick="window.dSaveUS()">💾 ZAKTUALIZUJ KOSZTY</button></div>
+        ` + nav;
+    }
+}
+
+// ==========================================
+// FUNKCJE TAXI (PANCERNE BEZ CICHYCH BŁĘDÓW)
+// ==========================================
+window.dStartS = function() { 
+    let el = document.getElementById('ds-o'); 
+    if(!el || el.value === '') { 
+        if(el) { el.style.borderBottom = '2px solid var(--danger)'; el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300); }
+        return alert("Wpisz aktualny stan licznika (KM) w puste pole!"); 
+    } 
+    let o = parseFloat(el.value); 
+    if(isNaN(o) || o <= 0) { 
+        if(el) { el.style.borderBottom = '2px solid var(--danger)'; el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300); }
+        return alert("Stan licznika musi być poprawną liczbą!"); 
+    } 
+    db.drv.odo = o; 
+    db.drv.sh = {on:true, o:o, t:Date.now(), tr:[]}; 
+    db.drv.liveRideStart = null; 
+    window.save(); window.render(); 
+}
+
+window.dTC = function(t,v,el) { if(t==='s') dTSrc=v; else dTPay=v; el.parentElement.querySelectorAll('.chip').forEach(c=>{ c.style.background='rgba(255,255,255,0.03)'; c.style.color='var(--muted)'; }); if(v==='Gotówka') { el.style.background='var(--success)'; el.style.color='#000'; } else if(v==='Karta') { el.style.background='var(--info)'; el.style.color='#fff'; } else { el.style.background='var(--driver)'; el.style.color='#fff'; } }
+window.startLiveRide = function(){db.drv.liveRideStart=Date.now();window.save();window.render();}
+window.stopLiveRide = function(){ let m=Math.round((Date.now()-db.drv.liveRideStart)/60000); if(m<1)m=1; db.drv.liveRideStart=null; window.save(); window.render(); setTimeout(()=>{ let iM=document.getElementById('dt-m'); let iV=document.getElementById('dt-v'); if(iM){iM.value=m; iM.classList.add('highlight-input'); setTimeout(()=>iM.classList.remove('highlight-input'),1500);} if(iV) { iV.focus(); } },50); }
+
+window.dAddT = function() { 
+    let vEl = document.getElementById('dt-v');
+    let v = window.safeVal('dt-v'); 
+    let k = window.safeVal('dt-k'); 
+    let m = window.safeVal('dt-m'); 
+    let cIdel = document.getElementById('dt-cid'); 
+    let cId = cIdel ? parseInt(cIdel.value)||null : null; 
+    
+    if(!v || v <= 0) {
+        if(vEl) { vEl.style.borderBottom = '2px solid var(--danger)'; vEl.classList.add('shake-anim'); setTimeout(()=>vEl.classList.remove('shake-anim'), 300); }
+        return alert("Podaj kwotę z taksometru/aplikacji!"); 
+    }
+    db.drv.sh.tr.unshift({id:Date.now(), v, k, m, s:dTSrc, p:dTPay, c:cId}); 
+    window.save(); window.render(); 
+}
+
+window.dDelT = function(id) { db.drv.sh.tr = db.drv.sh.tr.filter(x=>x.id!==id); window.save(); window.render(); }
+
+window.dEndS = function() { 
+    let el = document.getElementById('de-o'); 
+    if(!el || el.value === '') { 
+        if(el) { el.style.borderBottom = '2px solid var(--danger)'; el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300); }
+        return alert("Wpisz licznik końcowy (KM) po zjeździe na bazę!"); 
+    }
+    
+    let e = parseFloat(el.value); 
+    if(isNaN(e) || e <= db.drv.sh.o) { 
+        if(el) { el.style.borderBottom = '2px solid var(--danger)'; el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300); }
+        return alert(`Stan licznika końcowego musi być większy niż na starcie zmiany (${db.drv.sh.o} km)!`); 
+    }
+    
+    let g=0; let pk=0; let cf=0; 
+    db.drv.sh.tr.forEach(x=>{ g+=x.v; pk+=x.k; if(x.p==='Karta') cf += x.v * db.drv.cfg.cardF; }); 
+    let k = e - db.drv.sh.o; 
+    let fc = k * db.drv.cfg.fuelPx; 
+    let tax = g * db.drv.cfg.tax; 
+    let pFee = db.drv.cfg.eType === 'pct' ? g * db.drv.cfg.ePct : 0; 
+    let n = g - fc - tax - pFee - cf - db.drv.cfg.fix; 
+    
+    db.drv.odo = e; 
+    db.drv.h.unshift({id:Date.now(), rD:new Date().toISOString(), dt:new Date().toLocaleDateString('pl-PL'), g, n, k, pk, fc, tx:tax, pF:pFee, cF:cf, tr:[...db.drv.sh.tr]}); 
+    db.drv.sh.on = false; 
+    db.drv.sh.tr = []; 
+    db.drv.liveRideStart = null; 
+    window.save(); db.tab='stats'; window.render(); 
+    
+    let mHtml = `<div id="m-summary" class="modal-overlay" style="z-index: 30000; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);"><div class="panel" style="width:100%; max-width:380px; border-color:var(--success); text-align:center; padding:30px 20px; background: linear-gradient(145deg, #18181b, #09090b);"><div style="font-size:4rem; margin-bottom:10px;">🏁</div><h2 style="color:var(--success); margin:0 0 10px 0; font-weight:900; font-size:1.8rem; letter-spacing:-1px;">ZMIANA ZAKOŃCZONA</h2><p style="color:var(--muted); font-size:0.9rem; margin-bottom:20px;">Dobra robota! Wyniki zostały zapisane w systemie.</p><div style="background:#000; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px; margin-bottom:20px; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);"><div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;"><span style="color:var(--muted); font-size:0.85rem; text-transform:uppercase; font-weight:bold;">Utarg Brutto:</span><strong style="color:var(--success); font-size:1.3rem;">${g.toFixed(2)} zł</strong></div><div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;"><span style="color:var(--muted); font-size:0.85rem; text-transform:uppercase; font-weight:bold;">Przejechano:</span><strong style="color:#fff; font-size:1.2rem;">${k} km</strong></div><div style="display:flex; justify-content:space-between; border-top:1px dashed rgba(255,255,255,0.1); padding-top:12px; align-items:center;"><span style="color:var(--muted); font-size:0.85rem; text-transform:uppercase; font-weight:bold;">Czysty Zysk Netto:</span><strong style="color:${n>=0?'var(--success)':'var(--danger)'}; font-size:1.4rem;">${n.toFixed(2)} zł</strong></div></div><button class="btn" style="background:linear-gradient(135deg, var(--success), #059669); color:#000; font-size:1.1rem; padding:20px;" onclick="document.getElementById('m-summary').remove();">ZOBACZ STATYSTYKI</button></div></div>`;
+    document.body.insertAdjacentHTML('beforeend', mHtml);
+}
+
+window.dTransferToHomeUI = function() {
+    let accOpts = db.home.accs.map(a => `<option value="${a.id}">${a.n}</option>`).join('');
+    let mHtml = `<div id="m-transfer" class="modal-overlay" style="z-index: 30000; animation: fadeIn 0.3s;"><div class="panel" style="width:100%; max-width:380px; border-color:var(--life); text-align:center; background: linear-gradient(145deg, #18181b, #09090b);"><div style="font-size:3.5rem; margin-bottom:10px;">💸</div><h3 style="color:var(--life); margin:0 0 10px 0; font-size:1.5rem; font-weight:900;">PRZELEW DO DOMU</h3><p style="color:var(--muted); font-size:0.85rem; margin-bottom:20px; line-height:1.4;">Zdejmij gotówkę z utargu Taxi i przekaż na wybrane konto w Budżecie Domowym.</p><input type="number" id="transfer-amt" class="big-inp" placeholder="0.00" style="margin-bottom:15px; border-color:var(--life); color:var(--life); background:#000;"><select id="transfer-acc" style="width:100%; padding:15px; background:#000; border:1px solid var(--border); color:#fff; border-radius:12px; margin-bottom:20px; font-size:1.1rem; text-align:center;">${accOpts}</select><button class="btn btn-home" onclick="window.execTransfer()">POTWIERDŹ PRZELEW</button><button class="btn" style="background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.1); box-shadow:none;" onclick="document.getElementById('m-transfer').remove()">ANULUJ</button></div></div>`;
+    document.body.insertAdjacentHTML('beforeend', mHtml);
+    setTimeout(() => document.getElementById('transfer-amt').focus(), 100);
+}
+
+window.execTransfer = function() {
+    let el = document.getElementById('transfer-amt'); let acc = document.getElementById('transfer-acc').value; 
+    if(!el || !el.value) return; 
+    let amt = parseFloat(el.value);
+    if(amt > 0) {
+        db.home.trans.push({id:Date.now(), type:'inc', cat:'Utarg z Taxi', acc:acc, d:'Wypłata z Taxi', v:amt, who:db.userName, dt:new Date().toLocaleDateString('pl-PL'), rD:new Date().toISOString()});
+        window.save(); document.getElementById('m-transfer').remove();
+        let sHtml = `<div id="m-success" class="modal-overlay" style="z-index: 30000; animation: fadeIn 0.3s;"><div class="panel" style="width:100%; max-width:380px; border-color:var(--success); text-align:center;"><div style="font-size:4.5rem; margin-bottom:10px;">✔️</div><h3 style="color:var(--success); margin:0 0 10px 0; font-size:1.5rem; font-weight:900;">SUKCES!</h3><p style="color:var(--muted); font-size:0.95rem; margin-bottom:25px;">Kwota <strong style="color:#fff">${amt.toFixed(2)} zł</strong> wylądowała bezpiecznie na Twoim koncie.</p><button class="btn btn-success" style="background:var(--success); color:#000;" onclick="document.getElementById('m-success').remove()">ŚWIETNIE</button></div></div>`;
+        document.body.insertAdjacentHTML('beforeend', sHtml);
+    } else { 
+        el.style.borderBottom = '2px solid var(--danger)'; 
+        el.classList.add('shake-anim'); setTimeout(()=>el.classList.remove('shake-anim'), 300);
+    }
+}
+
+window.dSaveUS = function() { db.userName = document.getElementById('us-name').value; db.drv.cfg.goal = window.safeVal('us-goal', 350); db.drv.cfg.defCity = document.getElementById('us-city').value; db.drv.cfg.cC = window.safeVal('us-cc'); db.drv.cfg.cType = document.getElementById('us-ctype').value; db.drv.cfg.bC = window.safeVal('us-bc'); db.drv.cfg.iC = window.safeVal('us-ic'); db.drv.cfg.tax = window.safeVal('us-tx') / 100; db.drv.cfg.cardF = window.safeVal('us-cf') / 100; let eTy = document.getElementById('us-etype').value; db.drv.cfg.eType = eTy; if(eTy === 'flat') { db.drv.cfg.eC = window.safeVal('us-ec'); db.drv.cfg.ePct = 0; } else { db.drv.cfg.eC = 0; db.drv.cfg.ePct = window.safeVal('us-epct') / 100; } let dailyCar = (db.drv.cfg.cType === 'week') ? (db.drv.cfg.cC / 7) : (db.drv.cfg.cC / 30); let dailyOther = (db.drv.cfg.eC + db.drv.cfg.bC + db.drv.cfg.iC) / 30; db.drv.cfg.fix = dailyCar + dailyOther; window.save(); window.render(); alert('Zaktualizowano Koszty!'); }
+
+// MAPY
+window.lmap = null; window.routeLayer = null;
+window.calculateRouteAuto = async function() {
+    let start = document.getElementById('dq-start').value; let end = document.getElementById('dq-end').value;
+    if(!start || !end) return alert("Podaj adres startowy i docelowy!");
+    let defCity = db.drv.cfg.defCity || 'Szczecin'; let sQ = start.toLowerCase().includes(defCity.toLowerCase()) ? start : start + ', ' + defCity; let eQ = end.toLowerCase().includes(defCity.toLowerCase()) ? end : end + ', ' + defCity;
+    let btn = document.querySelector('button[onclick="window.calculateRouteAuto()"]'); let origBtnText = btn.innerText; btn.innerText = "⏳ OBLICZANIE..."; btn.style.opacity = 0.7;
+    try {
+        let resS = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(sQ)}`); let dataS = await resS.json();
+        let resE = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(eQ)}`); let dataE = await resE.json();
+        if(!dataS.length || !dataE.length) { btn.innerText = origBtnText; btn.style.opacity = 1; return alert("Nie odnaleziono adresu."); }
+        let routeRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${dataS[0].lon},${dataS[0].lat};${dataE[0].lon},${dataE[0].lat}?overview=full&geometries=geojson`); let routeData = await routeRes.json();
+        let distKm = routeData.routes[0].distance / 1000; let timeMin = routeData.routes[0].duration / 60;
+        document.getElementById('map-container').style.display = 'block';
+        if(!window.lmap) { window.lmap = L.map('map').setView([dataS[0].lat, dataS[0].lon], 13); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.lmap); }
+        window.lmap.invalidateSize(); if(window.routeLayer) window.lmap.removeLayer(window.routeLayer);
+        window.routeLayer = L.geoJSON(routeData.routes[0].geometry, {style: {color: '#d946ef', weight: 6}}).addTo(window.lmap); window.lmap.fitBounds(window.routeLayer.getBounds(), {padding: [20, 20]});
+        dQK = distKm; dQM_T = Math.round(timeMin); document.getElementById('res-km').innerText = distKm.toFixed(1) + ' km'; document.getElementById('res-min').innerText = dQM_T + ' min';
+        let isOut = !end.toLowerCase().includes(defCity.toLowerCase()); let slider = document.getElementById('zone-slider'); slider.max = distKm.toFixed(1);
+        if(isOut) { slider.value = Math.min(10, distKm); document.getElementById('zone-split').style.display = 'block'; } else { slider.value = distKm.toFixed(1); document.getElementById('zone-split').style.display = 'none'; }
+        window.updateZoneSplit();
+    } catch(e) { alert("Błąd połączenia z serwerem map."); } finally { btn.innerText = origBtnText; btn.style.opacity = 1; }
+}
+window.updateZoneSplit = function() { let slider = document.getElementById('zone-slider'); let inDist = parseFloat(slider.value); let outDist = parseFloat(slider.max) - inDist; document.getElementById('val-in').innerText = inDist.toFixed(1); document.getElementById('val-out').innerText = outDist.toFixed(1); window.updateRoutePrice(inDist, outDist); }
+window.updateRoutePrice = function(inDist = null, outDist = null) { if(inDist === null) { let slider = document.getElementById('zone-slider'); inDist = parseFloat(slider.value); outDist = parseFloat(slider.max) - inDist; } let q = db.drv.q; let discSel = document.getElementById('dq-c'); let disc = (discSel && discSel.selectedIndex > 0) ? parseFloat(discSel.options[discSel.selectedIndex].getAttribute('data-d')) : 0; let base = q.s + (inDist * (dQN ? q.t2 : q.t1)) + (outDist * (dQN ? q.t4 : q.t3)) + (dQM_T * (q.w / 60)); dQV = base - (base * (disc / 100)); document.getElementById('dqt').innerText = dQV.toFixed(2) + " zł"; }
+window.dQB = function() { if(!db.drv.sh.on) return alert("Otwórz zmianę!"); if(dQV>0) { db.drv.sh.tr.unshift({id:Date.now(), v:dQV, k:dQK.toFixed(1), m:dQM_T, s:'Z Mapy', p:'Gotówka'}); window.save(); db.tab='term'; window.render(); alert("Zaksięgowano kurs!"); } }
+window.dSaveQC = function() { db.drv.q = { s:window.safeVal('dcs'), w:window.safeVal('dcw'), t1:window.safeVal('dct1'), t2:window.safeVal('dct2'), t3:window.safeVal('dct3'), t4:window.safeVal('dct4') }; window.save(); alert("Zapisano Taryfy!"); }
+
+// FUELIO & CRM
+window.calcFuelioStats = function() { let l=db.drv.fuel; let s={l1:0,c1:0,ck:db.drv.cfg.fuelPx}; if(l.length>=2){ let lF=l.findIndex(x=>x.isF===1); if(lF!==-1){ let pF=l.findIndex((x,i)=>i>lF&&x.isF===1); if(pF!==-1){ let d=l[lF].o-l[pF].o; if(d>0){ let tL=0,tC=0; for(let i=lF;i<pF;i++){tL+=l[i].l;tC+=l[i].v;} s.l1=(tL/d)*100; s.c1=(tC/d)*100; s.ck=tC/d; db.drv.cfg.fuelPx=s.ck; window.save(); } } } } return s; }
+window.dAF = function() { let o=window.safeVal('df-o'); let l=window.safeVal('df-l'); let v=window.safeVal('df-v'); let fEl=document.getElementById('df-f'); let f=fEl?parseInt(fEl.value):1; if(!o||!l||!v) return alert("Wypełnij dane ze stacji!"); let dVal = document.getElementById('df-date').value; let dObj = dVal ? new Date(dVal) : new Date(); if(dVal) dObj.setHours(12,0,0); let dist = 0, l100 = 0, cpkm = 0; let prevF = db.drv.fuel.filter(x => x.o < o).sort((a,b) => b.o - a.o)[0]; if (prevF) { dist = o - prevF.o; if(dist > 0) { l100 = (l / dist) * 100; cpkm = v / dist; if(f === 1) db.drv.cfg.fuelPx = cpkm; } } db.drv.odo=o; db.drv.fuel.push({o,l,v,isF:f, rD:dObj.toISOString()}); db.drv.fuel.sort((a,b) => b.o - a.o); db.drv.exp.push({id:Date.now(), rD:dObj.toISOString(), d:`⛽ Tankowanie`, v, dt:dObj.toLocaleDateString('pl-PL'), ty:'f', l, odo:o, dist, l100, cpkm, isF:f}); db.drv.exp.sort((a,b) => new Date(b.rD) - new Date(a.rD)); window.save(); window.render(); }
+window.dAE = function() { let v=window.safeVal('de-v'); let cEl=document.getElementById('de-c'); let c=cEl?cEl.value:'Wydatki'; if(!v) return alert("Wpisz kwotę!"); let dVal = document.getElementById('de-date').value; let dObj = dVal ? new Date(dVal) : new Date(); if(dVal) dObj.setHours(12,0,0); db.drv.exp.push({id:Date.now(), rD:dObj.toISOString(), d:c, v, dt:dObj.toLocaleDateString('pl-PL'), ty:'e'}); db.drv.exp.sort((a,b) => new Date(b.rD) - new Date(a.rD)); window.save(); window.render(); }
+window.renderGarageHistory = function() { return db.drv.exp.map(x => { if(x.ty === 'f') { let dist = x.dist || 0; let l100 = x.l100 || 0; let cpkm = x.cpkm || 0; let l = x.l || 0; let odo = x.odo || 0; let full = x.isF === 1 ? 'Pod korek' : 'Częściowo'; let statsHtml = dist > 0 ? `<div style="display:flex; justify-content:space-between; width:100%; margin-top:12px; padding-top:12px; border-top:1px dashed rgba(255,255,255,0.1); font-size:0.8rem;"><div style="text-align:center;"><span style="color:var(--muted); font-size:0.65rem; text-transform:uppercase;">Dystans</span><br><strong style="color:#fff;">${dist} km</strong></div><div style="text-align:center;"><span style="color:var(--muted); font-size:0.65rem; text-transform:uppercase;">Spalanie</span><br><strong style="color:var(--info);">${l100.toFixed(1)} L</strong></div><div style="text-align:center;"><span style="color:var(--muted); font-size:0.65rem; text-transform:uppercase;">Koszt/KM</span><br><strong style="color:var(--danger);">${cpkm.toFixed(2)} zł</strong></div></div>` : `<div style="margin-top:10px; font-size:0.75rem; color:var(--muted); text-align:center; width:100%;">Zatankuj ponownie, aby obliczyć spalanie.</div>`; return `<div class="log-item" style="border-left-color:var(--fuel); flex-direction:column; align-items:flex-start;"><div style="display:flex; justify-content:space-between; width:100%; align-items:center;"><div><strong style="color:#fff; font-size:1.1rem;">${x.d} <span style="color:var(--fuel)">${l}L</span></strong><br><small style="color:var(--muted)">${x.dt} • ODO: <span style="color:#fff">${odo}</span> (${full})</small></div><strong style="color:var(--fuel); font-size:1.2rem;">-${x.v.toFixed(2)} zł</strong></div>${statsHtml}</div>`; } else { let col = x.ty==='amort' ? 'var(--info)' : 'var(--danger)'; let pref = x.ty==='amort' ? '' : '-'; return `<div class="log-item" style="border-left-color:${col};"><div><strong style="color:#fff; font-size:1.05rem;">${x.d}</strong><br><small style="color:var(--muted)">${x.dt}</small></div><strong style="color:${col}">${pref}${x.v.toFixed(2)} zł</strong></div>`; } }).join('') || '<div style="text-align:center;color:var(--muted);padding:10px;">Brak wpisów.</div>'; }
+window.dAddCrm = function() { let n = document.getElementById('dc-n').value; let ph = document.getElementById('dc-p').value; let d = window.safeVal('dc-d'); if(n) { db.drv.clients.unshift({id:Date.now(), n, ph, d, bl: false}); window.save(); window.render(); } }
+window.dCrmDel = function(id) { if(confirm("Usunąć klienta z bazy?")) { db.drv.clients = db.drv.clients.filter(x=>x.id!==id); window.save(); window.render(); } }
+
+// Start aplikacji
+window.render();
+</script>
+</body>
+</html>
